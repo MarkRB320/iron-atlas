@@ -1,0 +1,12 @@
+{
+  "appId": "uk.co.insomniait.ironatlas",
+  "appName": "Iron Atlas",
+  "webDir": "www",
+  "backgroundColor": "#07080C",
+  "ios": { "contentInset": "never" },
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "SystemBars": { "style": "DARK" },
+    "LocalNotifications": { "iconColor": "#FF5A4E" }
+  }
+}

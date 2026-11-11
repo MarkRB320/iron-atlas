@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https:; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <title>Iron Atlas · Account</title>
+  <link rel="stylesheet" href="account.css">
+  <script src="../config.js" defer></script>
+  <script src="account-tools.js" defer></script>
+  <script src="portal.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><strong>IRON ATLAS</strong><span>ACCOUNT</span></header>
+    <h1>Your account</h1>
+    <p class="lead">Manage your Iron Atlas sign-in and cloud records.</p>
+    <noscript>Enable JavaScript to manage your account.</noscript>
+    <p id="status" role="status" aria-live="polite" tabindex="-1" hidden></p>
+    <section id="recovery" hidden>
+      <h2>Choose a new password</h2>
+      <p>Set a new password for <b id="resetFor"></b>.</p>
+      <form id="change" method="post">
+        <label>New password<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirm new password<input type="password" name="confirm" autocomplete="new-password" minlength="8" required></label>
+        <button>Save password</button>
+      </form>
+    </section>
+    <div id="choices">
+      <section>
+        <h2>Reset password</h2>
+        <p>Get an email with a link to choose a new password.</p>
+        <form id="requestReset" method="post">
+          <label>Account email<input type="email" name="email" autocomplete="email" required></label>
+          <button>Send reset email</button>
+        </form>
+      </section>
+      <section>
+        <h2>Delete account</h2>
+        <p>Permanently delete your Iron Atlas sign-in, cloud workouts, measurements, photos, shared plan codes and trainer connections. You can do this here without the app.</p>
+        <p>Copies stored on other devices must be cleared on those devices. Manage any active subscription through the store where you purchased it.</p>
+        <form id="signIn" method="post">
+          <label>Account email<input type="email" name="email" autocomplete="username" required></label>
+          <label>Current password<input type="password" name="password" autocomplete="current-password" required></label>
+          <button class="secondary">Sign in to delete account</button>
+        </form>
+      </section>
+    </div>
+    <section id="deletePanel" hidden>
+      <h2>Confirm account deletion</h2>
+      <p>Your cloud records and progress photos will be permanently deleted. This cannot be undone.</p>
+      <form id="confirmDelete" method="post">
+        <label class="check"><input type="checkbox" name="consent" required><span>I want to delete the Iron Atlas account for <b id="deleteFor"></b>.</span></label>
+        <div class="actions"><button type="button" id="cancel" class="secondary">Keep account</button><button>Delete my account</button></div>
+      </form>
+    </section>
+    <footer>Need help with your account? Email <a href="mailto:mark@insomnia-it.co.uk">mark@insomnia-it.co.uk</a>.</footer>
+  </main>
+</body>
+</html>

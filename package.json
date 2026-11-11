@@ -1,0 +1,39 @@
+{
+  "name": "iron-atlas",
+  "version": "1.2.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "Iron Atlas: free-weight muscle guide with a rotatable 3D figure, 150+ animated exercises, weekly programmes, progressive overload, balance tracking, accounts, progress photos and body measurements.",
+  "scripts": {
+    "core": "node -e \"require('fs').copyFileSync(require.resolve('@capacitor/core/dist/capacitor.js'), 'www/capacitor.js'); console.log('copied capacitor.js into www/')\"",
+    "sync": "npm run core && cap sync",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "icons": "capacitor-assets generate --android --ios",
+    "store:android": "node scripts/check-store-config.mjs android && npm run core && cap sync android && cap open android",
+    "store:ios": "node scripts/check-store-config.mjs ios && npm run core && cap sync ios && cap open ios",
+    "test": "node --test",
+    "postinstall": "npm run core"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "8.0.2",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
+    "@capgo/capacitor-health": "8.11.14",
+    "@revenuecat/purchases-capacitor": "13.8.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.6.0",
+    "@electric-sql/pglite": "0.5.12"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

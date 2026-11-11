@@ -1,0 +1,60 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+/* Begin PBXProject section */
+		A70000000000000000000001 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 2600; TargetAttributes = { A70000000000000000000005 /* IronAtlasUITests */ = { TestTargetID = A70000000000000000000004 /* QAHost */; }; }; }; buildConfigurationList = A7000000000000000000000E /* Build configuration list for project */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base,); mainGroup = A70000000000000000000002 /* Main group */; productRefGroup = A70000000000000000000003 /* Products */; projectDirPath = ""; projectRoot = ""; targets = (A70000000000000000000004 /* QAHost */, A70000000000000000000005 /* IronAtlasUITests */,); };
+/* End PBXProject section */
+
+/* Begin PBXGroup section */
+		A70000000000000000000002 /* Main group */ = { isa = PBXGroup; children = (A70000000000000000000008 /* QAHost.swift */, A70000000000000000000009 /* IronAtlasUITests.swift */, A70000000000000000000003 /* Products */,); sourceTree = "<group>"; };
+		A70000000000000000000003 /* Products */ = { isa = PBXGroup; children = (A70000000000000000000006 /* QAHost.app */, A70000000000000000000007 /* IronAtlasUITests.xctest */,); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A70000000000000000000004 /* QAHost */ = { isa = PBXNativeTarget; buildConfigurationList = A7000000000000000000000F /* Build configuration list for QAHost */; buildPhases = (A7000000000000000000000A /* Sources */,); buildRules = (); dependencies = (); name = QAHost; productName = QAHost; productReference = A70000000000000000000006 /* QAHost.app */; productType = "com.apple.product-type.application"; };
+		A70000000000000000000005 /* IronAtlasUITests */ = { isa = PBXNativeTarget; buildConfigurationList = A70000000000000000000010 /* Build configuration list for IronAtlasUITests */; buildPhases = (A7000000000000000000000B /* Sources */,); buildRules = (); dependencies = (A70000000000000000000014 /* PBXTargetDependency */,); name = IronAtlasUITests; productName = IronAtlasUITests; productReference = A70000000000000000000007 /* IronAtlasUITests.xctest */; productType = "com.apple.product-type.bundle.ui-testing"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXFileReference section */
+		A70000000000000000000006 /* QAHost.app */ = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QAHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A70000000000000000000007 /* IronAtlasUITests.xctest */ = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IronAtlasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A70000000000000000000008 /* QAHost.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QAHost.swift; sourceTree = "<group>"; };
+		A70000000000000000000009 /* IronAtlasUITests.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronAtlasUITests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXBuildFile section */
+		A7000000000000000000000C /* QAHost.swift in Sources */ = { isa = PBXBuildFile; fileRef = A70000000000000000000008 /* QAHost.swift */; };
+		A7000000000000000000000D /* IronAtlasUITests.swift in Sources */ = { isa = PBXBuildFile; fileRef = A70000000000000000000009 /* IronAtlasUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A7000000000000000000000A /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A7000000000000000000000C /* QAHost.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		A7000000000000000000000B /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A7000000000000000000000D /* IronAtlasUITests.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCConfigurationList section */
+		A7000000000000000000000E /* Build configuration list for project */ = { isa = XCConfigurationList; buildConfigurations = (A70000000000000000000011 /* Debug */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+		A7000000000000000000000F /* Build configuration list for QAHost */ = { isa = XCConfigurationList; buildConfigurations = (A70000000000000000000012 /* Debug */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+		A70000000000000000000010 /* Build configuration list for IronAtlasUITests */ = { isa = XCConfigurationList; buildConfigurations = (A70000000000000000000013 /* Debug */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+/* End XCConfigurationList section */
+
+/* Begin XCBuildConfiguration section */
+		A70000000000000000000011 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { SDKROOT = iphoneos; SUPPORTED_PLATFORMS = iphonesimulator; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; CLANG_ENABLE_MODULES = YES; ENABLE_TESTABILITY = YES; }; name = Debug; };
+		A70000000000000000000012 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; PRODUCT_BUNDLE_IDENTIFIER = uk.co.insomniait.ironatlas.qa.host; PRODUCT_NAME = "$(TARGET_NAME)"; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 1.0; }; name = Debug; };
+		A70000000000000000000013 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = uk.co.insomniait.ironatlas.qa.ui; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = QAHost; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks",); }; name = Debug; };
+/* End XCBuildConfiguration section */
+
+/* Begin PBXContainerItemProxy section */
+		A70000000000000000000015 /* PBXContainerItemProxy */ = { isa = PBXContainerItemProxy; containerPortal = A70000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A70000000000000000000004 /* QAHost */; remoteInfo = QAHost; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A70000000000000000000014 /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = A70000000000000000000004 /* QAHost */; targetProxy = A70000000000000000000015 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+	};
+	rootObject = A70000000000000000000001 /* Project object */;
+}

@@ -1,0 +1,13 @@
+project_id = "iron-atlas"
+
+[functions.coach-access]
+# Require a user JWT at the gateway and recheck the user with this project's Auth server.
+verify_jwt = true
+
+[functions.cloud-photo-remove]
+# Auth and SQL recheck the user and the captured consent generation before exact-name removal.
+verify_jwt = true
+
+[functions.account-erasure]
+# A service-only RPC consumes the scheduler's one-use expiring token before worker activity.
+verify_jwt = false

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Iron Atlas</string>
+    <string name="title_activity_main">Iron Atlas</string>
+    <string name="package_name">uk.co.insomniait.ironatlas</string>
+    <string name="custom_url_scheme">uk.co.insomniait.ironatlas</string>
+    <string name="health_connect_privacy_policy_url">https://ironatlas.insomnia-it.co.uk/privacy/</string>
+</resources>

@@ -1,0 +1,23 @@
+{
+  "project": "openGym",
+  "repository": "https://github.com/DuarteSantos8/openGym",
+  "commit": "50ab7f24e3c4ee70e7f26b3beb426f571e03414b",
+  "copyright": "Copyright (C) 2026 Duarte Santos",
+  "license": "AGPL-3.0-only",
+  "adaptedOn": "2026-11-11",
+  "adapter": "training-tools.js",
+  "files": [
+    { "path": "frontend/src/lib/plates.js", "gitBlob": "8b9d322656e648947415ccecaead1179f0e54b0a", "used": ["PLATE_SIZES", "quarter-unit plateStack algorithm", "rowLoad", "plateDelta"] },
+    { "path": "frontend/src/lib/onerm.js", "gitBlob": "f14708eca05401af7f3252e436997b2885d1c144", "used": ["classic FORMULAS", "FORMULA_NAMES", "12-repetition-capped estimate1RM"] },
+    { "path": "frontend/src/lib/export-csv.js", "gitBlob": "7794e042a6a2140a2f660f53b7f75b10385cb404", "used": ["WORKOUT_COLUMNS", "csvField", "CSV line and text serialization"] }
+  ],
+  "changes": [
+    "Standalone UMD browser/CommonJS API with no framework, account or network dependencies",
+    "Finite bounded inputs and inventory counts, duplicate-size validation, below-bar error and no rounded-up loads",
+    "Editable starting inventory of two pairs of common plates in the selected physical unit",
+    "Seven classic 1RM formulas, integer repetitions only; weighted ensembles and confidence percentages omitted",
+    "Iron Atlas set-log CSV adapter with exact UTC set timestamps, names and separate Iron Atlas exercise IDs",
+    "Stricter spreadsheet formula-injection escaping"
+  ],
+  "excluded": ["Exercise catalogue", "Exercise instructions", "Images", "Animations", "Gym visual media", "Body diagram geometry", "Upstream account/backend code"]
+}
