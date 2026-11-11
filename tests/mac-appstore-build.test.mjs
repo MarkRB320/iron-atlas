@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { expected, validateInfo, validateProvisioning, assetManifest, validateAssets, matchingBuilds, finishUpload, signingFailure,
-  manualSigningInputs, validateManualProfile, distributionIdentityMatches, manualProject, exportSettings } from '../scripts/mac-appstore-build.mjs';
+  manualSigningInputs, validateManualProfile, distributionIdentityMatches, manualProject, exportSettings, archiveArguments } from '../scripts/mac-appstore-build.mjs';
 
 test('signed iOS metadata must match the target, version, encryption and device SDK', () => {
   const info = { CFBundleIdentifier: expected.bundleId, CFBundleShortVersionString: expected.version, CFBundleVersion: expected.build,
@@ -80,6 +80,23 @@ test('failed or pending Apple processing never writes TestFlight notes and remai
   }
 });
 
+test('default TestFlight notes include the new training tools and bundled source sharing', async () => {
+  const localizations = [];
+  const api = async (method, path, body) => {
+    if (path.startsWith('/v1/builds?')) return builds('VALID');
+    if (method === 'GET' && path.endsWith('/betaBuildLocalizations')) return { data: localizations };
+    if (method === 'POST' && path === '/v1/betaBuildLocalizations') {
+      localizations.push({ id: 'synthetic-locale', attributes: body.data.attributes }); return {};
+    }
+    if (path.endsWith('/buildBetaDetail')) return { data: { attributes: {} } };
+    throw Error('Unexpected API call');
+  };
+  await finishUpload(api, { upload: {} }, { persist() {}, attempts: 1 });
+  const notes = localizations[0].attributes.whatsNew;
+  for (const feature of ['sign-in and recovery', 'store purchase restoration', 'OpenGym plate calculator',
+    'rep-max estimates', 'workout CSV export', 'saving or sharing the bundled source archive']) assert.ok(notes.includes(feature));
+});
+
 test('signing failures distinguish missing distribution assets from keychain access and general failures', () => {
   assert.match(signingFailure('No signing certificate "Apple Distribution" found'), /Account Holder or Admin/);
   assert.match(signingFailure('No profiles for uk.co.insomniait.ironatlas were found'), /App Store profiles/);
@@ -129,4 +146,27 @@ test('manual signing settings touch App Release only and export pins the matchin
     signingStyle: 'automatic', manageAppVersionAndBuildNumber: false, testFlightInternalTestingOnly: false });
   assert.deepEqual(exportSettings('ABCDE12345', signing, 'upload').provisioningProfiles, { [expected.bundleId]: signing.profileUuid });
   assert.equal(exportSettings('ABCDE12345', signing).signingCertificate, signing.identity);
+});
+
+test('manual archive signs App Release without overriding automatic Swift-package resource targets', () => {
+  const app = readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8');
+  const dependency = '\n\t\tAAAAAAAAAAAAAAAAAAAAAAAA /* Release */ = {\n' +
+    '\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {\n' +
+    '\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = RevenueCat.resources;\n' +
+    '\t\t\t\tCODE_SIGN_STYLE = Automatic;\n\t\t\t};\n\t\t};';
+  const team = 'ABCDE12345';
+  const manual = { identity: 'A'.repeat(40), profileUuid: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' };
+  const configured = manualProject(app + dependency, manual, team);
+  assert.ok(configured.endsWith(dependency), 'the dependency keeps its original automatic signing settings');
+  assert.equal((configured.match(/CODE_SIGN_IDENTITY = "A{40}";/g) || []).length, 1);
+  assert.equal((configured.match(/PROVISIONING_PROFILE_SPECIFIER = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";/g) || []).length, 1);
+  assert.equal((configured.match(/DEVELOPMENT_TEAM = "ABCDE12345";/g) || []).length, 1);
+  const config = { team, manual, output: join(tmpdir(), 'synthetic-output') };
+  const args = archiveArguments(config, join(config.output, 'app.xcarchive'), [], 'synthetic-node');
+  assert.equal(args.some(value => /^(?:CODE_SIGN|PROVISIONING_PROFILE|DEVELOPMENT_TEAM)/.test(value)), false,
+    'xcodebuild command-line settings would override every dependency target');
+  assert.equal(args.at(-1), 'archive');
+  const automatic = archiveArguments({ ...config, manual: null }, 'synthetic.xcarchive', []);
+  assert.ok(automatic.includes('DEVELOPMENT_TEAM=' + team));
+  assert.ok(automatic.includes('CODE_SIGN_STYLE=Automatic'));
 });

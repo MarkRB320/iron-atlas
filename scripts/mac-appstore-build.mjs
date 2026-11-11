@@ -107,6 +107,20 @@ export function exportSettings(team, manual, destination = 'export') {
     ...(manual ? { signingCertificate: manual.identity, provisioningProfiles: { [expected.bundleId]: manual.profileUuid } } : {}) };
 }
 
+export function archiveArguments(config, archive, auth, nodeBinary = process.execPath) {
+  return [
+    '-project', 'ios/App/App.xcodeproj', '-scheme', 'App', '-configuration', 'Release',
+    '-destination', 'generic/platform=iOS', '-archivePath', archive,
+    '-derivedDataPath', join(config.output, 'DerivedData'), ...auth,
+    // Manual signing is already set on App Release by manualProject(). Global
+    // overrides also reach automatically signed Swift-package resource bundles.
+    ...(config.manual ? [] : ['DEVELOPMENT_TEAM=' + config.team, 'CODE_SIGN_STYLE=Automatic']),
+    'MARKETING_VERSION=' + expected.version, 'CURRENT_PROJECT_VERSION=' + expected.build,
+    'GENERATE_INFOPLIST_FILE=YES', 'INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO',
+    'NODE_BINARY=' + nodeBinary, 'archive',
+  ];
+}
+
 export function assetManifest(directory) {
   const result = {};
   function visit(folder) {
@@ -239,7 +253,7 @@ export async function matchingBuilds(api) {
 }
 
 export async function finishUpload(api, receipt, { persist, attempts = 90, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), locale = 'en-GB', notes } = {}) {
-  notes ||= 'Test sign-in and recovery, optional cloud backup, two-device workout syncing, progress photos, backup withdrawal and re-enabling, trainer and plan sharing, account deletion, and store purchase restoration.';
+  notes ||= 'Test sign-in and recovery, optional cloud backup, two-device workout syncing, progress photos, backup withdrawal and re-enabling, trainer and plan sharing, account deletion, and store purchase restoration. Also test the OpenGym plate calculator, rep-max estimates, workout CSV export, and saving or sharing the bundled source archive.';
   assert.ok(notes.length <= 4000 && locale.length <= 12, 'Invalid TestFlight localization');
   let build;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -350,15 +364,7 @@ export async function build(outputArgument, upload = false) {
     writeFileSync(projectPath, configured);
   }
   console.log('Archiving the signed iOS device app.');
-  try { command('archive', 'xcodebuild', [
-    '-project', 'ios/App/App.xcodeproj', '-scheme', 'App', '-configuration', 'Release',
-    '-destination', 'generic/platform=iOS', '-archivePath', archive,
-    '-derivedDataPath', join(config.output, 'DerivedData'), ...auth,
-    'DEVELOPMENT_TEAM=' + config.team, ...(config.manual ? ['CODE_SIGN_IDENTITY=' + config.manual.identity] : ['CODE_SIGN_STYLE=Automatic']),
-    'MARKETING_VERSION=' + expected.version, 'CURRENT_PROJECT_VERSION=' + expected.build,
-    'GENERATE_INFOPLIST_FILE=YES', 'INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO',
-    'NODE_BINARY=' + process.execPath, 'archive',
-  ]); } finally {
+  try { command('archive', 'xcodebuild', archiveArguments(config, archive, auth)); } finally {
     if (config.manual) {
       writeFileSync(projectPath, originalProject);
       assert.equal(hash(readFileSync(projectPath)), projectProof.originalSha256, 'Original project restoration failed');
