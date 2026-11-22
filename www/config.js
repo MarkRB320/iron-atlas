@@ -7,7 +7,7 @@ window.IRON_ATLAS_CONFIG = {
 
   // Premium subscriptions (RevenueCat): Project settings > API keys > public app-specific keys
   revenuecatAppleKey: 'appl_rybHPfDjWWIunGANpMsLUoRdUeD',     // starts appl_
-  revenuecatGoogleKey: '',    // starts goog_
+  revenuecatGoogleKey: 'goog_PRoJlPwPaJXiuxEYAXvzDTEsGsc',    // public Google Play SDK key
   entitlement: 'premium',     // the entitlement your three products unlock
   coachEntitlement: 'coach',  // Iron Atlas Coach for personal trainers
   coachOffering: 'coach',     // the RevenueCat offering that holds the two Coach packages
