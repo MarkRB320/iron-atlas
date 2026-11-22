@@ -102,8 +102,9 @@ export function manualProject(source, signing, team) {
 }
 
 export function prepareSigningProject(projectDirectory, signing, team) {
+  const requested = lstatSync(projectDirectory);
+  assert.ok(requested.isDirectory() && !requested.isSymbolicLink(), 'Unexpected source project directory');
   const source = realpathSync(projectDirectory);
-  assert.ok(source === resolve(projectDirectory) && lstatSync(source).isDirectory(), 'Unexpected source project directory');
   const projectFile = join(source, 'project.pbxproj');
   const original = readFileSync(projectFile);
   const configured = manualProject(original.toString('utf8'), signing, team);

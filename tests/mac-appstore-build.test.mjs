@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -185,8 +185,8 @@ test('manual archive keeps canonical source unchanged and preserves sibling proj
     const manual = { identity: 'A'.repeat(40), profileUuid: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' };
     generated = prepareSigningProject(project, manual, 'ABCDE12345');
     assert.deepEqual(readFileSync(join(project, 'project.pbxproj')), original, 'strict corresponding-source hash remains valid during archive');
-    assert.equal(dirname(generated.directory), dirname(project));
-    assert.equal(resolve(dirname(generated.directory), 'CapApp-SPM'), resolve(dirname(project), 'CapApp-SPM'));
+    assert.equal(dirname(generated.directory), realpathSync(dirname(project)));
+    assert.equal(resolve(dirname(generated.directory), 'CapApp-SPM'), resolve(realpathSync(dirname(project)), 'CapApp-SPM'));
     assert.equal(readFileSync(join(generated.directory, scheme), 'utf8'), schemeSource.replace('container:App.xcodeproj', 'container:' + basename(generated.directory)));
     assert.equal(readFileSync(join(project, scheme), 'utf8'), schemeSource);
     assert.match(readFileSync(join(generated.directory, 'project.pbxproj'), 'utf8'), /CODE_SIGN_IDENTITY = "A{40}";/);
@@ -212,5 +212,15 @@ test('generated signing project cleans up while reporting unexpected canonical s
     assert.throws(() => generated.cleanup(), /Canonical source project changed/);
     assert.equal(existsSync(generated.directory), false);
     assert.equal(readFileSync(join(project, 'project.pbxproj'), 'utf8'), 'unexpected edit', 'cleanup never overwrites the canonical project');
+  } finally { rmSync(temporary, { recursive: true }); }
+});
+
+test('manual signing still rejects a linked project directory after canonicalizing parent aliases', () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'iron-atlas-project-link-'));
+  try {
+    const project = join(temporary, 'App.xcodeproj'), linked = join(temporary, 'Linked.xcodeproj');
+    mkdirSync(project);
+    symlinkSync(project, linked, 'junction');
+    assert.throws(() => prepareSigningProject(linked, {}, 'ABCDE12345'), /Unexpected source project directory/);
   } finally { rmSync(temporary, { recursive: true }); }
 });
