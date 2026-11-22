@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { expected, validateInfo, validateProvisioning, assetManifest, validateAssets, matchingBuilds, finishUpload, signingFailure,
-  manualSigningInputs, validateManualProfile, distributionIdentityMatches, manualProject, exportSettings, archiveArguments } from '../scripts/mac-appstore-build.mjs';
+  manualSigningInputs, validateManualProfile, distributionIdentityMatches, manualProject, prepareSigningProject, exportSettings, archiveArguments } from '../scripts/mac-appstore-build.mjs';
 
 test('signed iOS metadata must match the target, version, encryption and device SDK', () => {
   const info = { CFBundleIdentifier: expected.bundleId, CFBundleShortVersionString: expected.version, CFBundleVersion: expected.build,
@@ -169,4 +169,48 @@ test('manual archive signs App Release without overriding automatic Swift-packag
   const automatic = archiveArguments({ ...config, manual: null }, 'synthetic.xcarchive', []);
   assert.ok(automatic.includes('DEVELOPMENT_TEAM=' + team));
   assert.ok(automatic.includes('CODE_SIGN_STYLE=Automatic'));
+});
+
+test('manual archive keeps canonical source unchanged and preserves sibling project paths and schemes', () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'iron-atlas-project-copy-'));
+  let generated;
+  try {
+    const project = join(temporary, 'App.xcodeproj');
+    const scheme = 'xcshareddata/xcschemes/App.xcscheme';
+    mkdirSync(join(project, 'xcshareddata/xcschemes'), { recursive: true });
+    const original = readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url));
+    writeFileSync(join(project, 'project.pbxproj'), original);
+    const schemeSource = '<Scheme><BuildableReference ReferencedContainer="container:App.xcodeproj"/></Scheme>';
+    writeFileSync(join(project, scheme), schemeSource);
+    const manual = { identity: 'A'.repeat(40), profileUuid: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' };
+    generated = prepareSigningProject(project, manual, 'ABCDE12345');
+    assert.deepEqual(readFileSync(join(project, 'project.pbxproj')), original, 'strict corresponding-source hash remains valid during archive');
+    assert.equal(dirname(generated.directory), dirname(project));
+    assert.equal(resolve(dirname(generated.directory), 'CapApp-SPM'), resolve(dirname(project), 'CapApp-SPM'));
+    assert.equal(readFileSync(join(generated.directory, scheme), 'utf8'), schemeSource.replace('container:App.xcodeproj', 'container:' + basename(generated.directory)));
+    assert.equal(readFileSync(join(project, scheme), 'utf8'), schemeSource);
+    assert.match(readFileSync(join(generated.directory, 'project.pbxproj'), 'utf8'), /CODE_SIGN_IDENTITY = "A{40}";/);
+    const args = archiveArguments({ archiveProject: generated.directory, manual, output: temporary }, 'synthetic.xcarchive', []);
+    assert.equal(args[args.indexOf('-project') + 1], generated.directory);
+    const generatedPath = generated.directory;
+    generated.cleanup(); generated = null;
+    assert.equal(existsSync(generatedPath), false);
+    assert.deepEqual(readFileSync(join(project, 'project.pbxproj')), original);
+  } finally {
+    if (generated) generated.cleanup();
+    rmSync(temporary, { recursive: true });
+  }
+});
+
+test('generated signing project cleans up while reporting unexpected canonical source edits', () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'iron-atlas-project-cleanup-'));
+  try {
+    const project = join(temporary, 'App.xcodeproj'); mkdirSync(project);
+    writeFileSync(join(project, 'project.pbxproj'), readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url)));
+    const generated = prepareSigningProject(project, { identity: 'A'.repeat(40), profileUuid: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' }, 'ABCDE12345');
+    writeFileSync(join(project, 'project.pbxproj'), 'unexpected edit');
+    assert.throws(() => generated.cleanup(), /Canonical source project changed/);
+    assert.equal(existsSync(generated.directory), false);
+    assert.equal(readFileSync(join(project, 'project.pbxproj'), 'utf8'), 'unexpected edit', 'cleanup never overwrites the canonical project');
+  } finally { rmSync(temporary, { recursive: true }); }
 });

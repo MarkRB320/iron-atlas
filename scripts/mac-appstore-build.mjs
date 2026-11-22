@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID, sign } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
-  closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync,
-  readdirSync, realpathSync, renameSync, statSync, writeFileSync,
+  closeSync, copyFileSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync,
+  readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
@@ -101,6 +101,49 @@ export function manualProject(source, signing, team) {
   return result;
 }
 
+export function prepareSigningProject(projectDirectory, signing, team) {
+  const source = realpathSync(projectDirectory);
+  assert.ok(source === resolve(projectDirectory) && lstatSync(source).isDirectory(), 'Unexpected source project directory');
+  const projectFile = join(source, 'project.pbxproj');
+  const original = readFileSync(projectFile);
+  const configured = manualProject(original.toString('utf8'), signing, team);
+  // Keep the same parent so SOURCE_ROOT, relative source references, local
+  // Swift packages and checked-in workspace/scheme paths resolve unchanged.
+  // The canonical project stays byte-identical for the archive's source gate.
+  const directory = join(dirname(source), 'IronAtlasSigning-' + randomUUID() + '.xcodeproj');
+  mkdirSync(directory, { mode: 0o700 });
+  function copyDirectory(from, to) {
+    for (const entry of readdirSync(from, { withFileTypes: true })) {
+      const input = join(from, entry.name), output = join(to, entry.name);
+      assert.ok(!entry.isSymbolicLink() && realpathSync(input) === input, 'Project input redirects');
+      if (entry.isDirectory()) { mkdirSync(output, { mode: 0o700 }); copyDirectory(input, output); }
+      else {
+        assert.ok(entry.isFile(), 'Unexpected project input');
+        if (entry.name.endsWith('.xcscheme')) {
+          const scheme = readFileSync(input, 'utf8').replace(/(ReferencedContainer\s*=\s*)(["'])(.*?)\2/g,
+            (whole, prefix, quote, value) => value === 'container:' + basename(source)
+              ? prefix + quote + 'container:' + basename(directory) + quote : whole);
+          writeFileSync(output, scheme);
+        } else copyFileSync(input, output);
+      }
+    }
+  }
+  function removeGenerated() {
+    assert.ok(dirname(directory) === dirname(source) && /^IronAtlasSigning-[a-f0-9-]+\.xcodeproj$/.test(basename(directory)), 'Unexpected generated project path');
+    assert.ok(realpathSync(directory) === directory && !lstatSync(directory).isSymbolicLink(), 'Generated project path redirects');
+    rmSync(directory, { recursive: true });
+  }
+  try {
+    copyDirectory(source, directory);
+    writeFileSync(join(directory, 'project.pbxproj'), configured);
+  } catch (error) { removeGenerated(); throw error; }
+  return { directory, original, originalSha256: hash(original), configuredSha256: hash(configured),
+    cleanup() {
+      try { assert.equal(hash(readFileSync(projectFile)), hash(original), 'Canonical source project changed during archive'); }
+      finally { removeGenerated(); }
+    } };
+}
+
 export function exportSettings(team, manual, destination = 'export') {
   return { method: 'app-store-connect', destination, teamID: team, signingStyle: manual ? 'manual' : 'automatic',
     manageAppVersionAndBuildNumber: false, testFlightInternalTestingOnly: false,
@@ -109,7 +152,7 @@ export function exportSettings(team, manual, destination = 'export') {
 
 export function archiveArguments(config, archive, auth, nodeBinary = process.execPath) {
   return [
-    '-project', 'ios/App/App.xcodeproj', '-scheme', 'App', '-configuration', 'Release',
+    '-project', config.archiveProject || 'ios/App/App.xcodeproj', '-scheme', 'App', '-configuration', 'Release',
     '-destination', 'generic/platform=iOS', '-archivePath', archive,
     '-derivedDataPath', join(config.output, 'DerivedData'), ...auth,
     // Manual signing is already set on App Release by manualProject(). Global
@@ -355,20 +398,20 @@ export async function build(outputArgument, upload = false) {
   const archive = join(config.output, 'IronAtlas-1.2.0-1.xcarchive');
   const auth = [...(config.manual ? [] : ['-allowProvisioningUpdates']), '-authenticationKeyPath', config.key, '-authenticationKeyID', config.keyId, '-authenticationKeyIssuerID', config.issuer];
   const projectPath = join(root, 'ios/App/App.xcodeproj/project.pbxproj');
-  const originalProject = readFileSync(projectPath);
-  let projectProof;
-  if (config.manual) {
-    const configured = manualProject(originalProject.toString('utf8'), config.manual, config.team);
-    writeFileSync(join(config.output, 'App-project-before-signing.pbxproj'), originalProject, { mode: 0o600, flag: 'wx' });
-    projectProof = { originalSha256: hash(originalProject), configuredSha256: hash(configured) };
-    writeFileSync(projectPath, configured);
-  }
+  let projectProof, signingProject;
   console.log('Archiving the signed iOS device app.');
-  try { command('archive', 'xcodebuild', archiveArguments(config, archive, auth)); } finally {
+  try {
     if (config.manual) {
-      writeFileSync(projectPath, originalProject);
-      assert.equal(hash(readFileSync(projectPath)), projectProof.originalSha256, 'Original project restoration failed');
-      projectProof.restored = true;
+      signingProject = prepareSigningProject(dirname(projectPath), config.manual, config.team);
+      projectProof = { originalSha256: signingProject.originalSha256, configuredSha256: signingProject.configuredSha256 };
+      writeFileSync(join(config.output, 'App-project-before-signing.pbxproj'), signingProject.original, { mode: 0o600, flag: 'wx' });
+    }
+    command('archive', 'xcodebuild', archiveArguments({ ...config, archiveProject: signingProject?.directory }, archive, auth));
+  } finally {
+    if (signingProject) {
+      signingProject.cleanup();
+      projectProof.sourceUnchanged = true;
+      projectProof.generatedProjectRemoved = true;
     }
   }
   function verifyApplication(app, label, distribution) {
